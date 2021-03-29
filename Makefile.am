@@ -9,7 +9,7 @@ ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = subdir-objects
 
 # This is so we can #include <gperftools/foo>
-AM_CPPFLAGS = -I$(top_srcdir)/src
+AM_CPPFLAGS = -I$(top_srcdir)/src -ITODO
 
 if !WITH_STACK_TRACE
 AM_CPPFLAGS += -DNO_TCMALLOC_SAMPLES

@@ -139,6 +139,8 @@
      defined(__aarch64__) || defined(__s390__) || defined(__riscv)) \
   && (defined(__linux))
 
+#include "shim_entry_api.h"
+
 #ifndef SYS_CPLUSPLUS
 #ifdef __cplusplus
 /* Some system header files in older versions of gcc neglect to properly
@@ -1078,7 +1080,7 @@ struct kernel_stat {
       __asm__ __volatile__("push %%ebx\n"                                     \
                            CFI_ADJUST_CFA_OFFSET(4)                           \
                            "movl %2,%%ebx\n"                                  \
-                           "int $0x80\n"                                      \
+                           "ud2\n"                                      \
                            "pop %%ebx\n"                                      \
                            CFI_ADJUST_CFA_OFFSET(-4)                          \
                            args                                               \
@@ -1088,7 +1090,7 @@ struct kernel_stat {
     #define _syscall0(type,name)                                              \
       type LSS_NAME(name)(void) {                                             \
         long __res;                                                           \
-        __asm__ volatile("int $0x80"                                          \
+        __asm__ volatile("ud2"                                          \
                          : "=a" (__res)                                       \
                          : "0" (__NR_##name)                                  \
                          : "memory");                                         \
@@ -1133,7 +1135,7 @@ struct kernel_stat {
         __asm__ __volatile__("push %%ebx\n"                                   \
                              "movl %2,%%ebx\n"                                \
                              "movl %1,%%eax\n"                                \
-                             "int  $0x80\n"                                   \
+                             "ud2\n"                                   \
                              "pop  %%ebx"                                     \
                              : "=a" (__res)                                   \
                              : "i" (__NR_##name), "ri" ((long)(arg1)),        \
@@ -1154,7 +1156,7 @@ struct kernel_stat {
                              "movl 4(%2),%%ebp\n"                             \
                              "movl 0(%2), %%ebx\n"                            \
                              "movl %1,%%eax\n"                                \
-                             "int  $0x80\n"                                   \
+                             "ud2\n"                                   \
                              "pop  %%ebx\n"                                   \
                              "pop  %%ebp"                                     \
                              : "=a" (__res)                                   \
@@ -1210,7 +1212,7 @@ struct kernel_stat {
                            "pushl  %%ebx\n"
                            "movl   %%eax,%%ebx\n"
                            "movl   %2,%%eax\n"
-                           "int    $0x80\n"
+                           "ud2\n"
 
                            /* In the parent: restore %ebx
                             * In the child:  move "fn" into %ebx
@@ -1238,7 +1240,7 @@ struct kernel_stat {
                             */
                            "movl   %%eax,%%ebx\n"
                            "movl   $1,%%eax\n"
-                           "int    $0x80\n"
+                           "ud2\n"
 
                            /* Return to parent.
                             */
@@ -1262,7 +1264,7 @@ struct kernel_stat {
       __asm__ __volatile__("call   2f\n"
                          "0:.align 16\n"
                          "1:movl   %1,%%eax\n"
-                           "int    $0x80\n"
+                           "ud2\n"
                          "2:popl   %0\n"
                            "addl   $(1b-0b),%0\n"
                            : "=a" (res)
@@ -1281,7 +1283,7 @@ struct kernel_stat {
                          "0:.align 16\n"
                          "1:pop    %%eax\n"
                            "movl   %1,%%eax\n"
-                           "int    $0x80\n"
+                           "ud2\n"
                          "2:popl   %0\n"
                            "addl   $(1b-0b),%0\n"
                            : "=a" (res)
@@ -1296,7 +1298,7 @@ struct kernel_stat {
      * option).
      */
     #undef  LSS_ENTRYPOINT
-    #define LSS_ENTRYPOINT "syscall\n"
+    #define LSS_ENTRYPOINT "SYSCALLDB\n"
 
     /* The x32 ABI has 32 bit longs, but the syscall interface is 64 bit.
      * We need to explicitly cast to an unsigned 64 bit type to avoid implicit
@@ -1465,7 +1467,7 @@ struct kernel_stat {
                              "movq   %2,%%rax\n"
                              "movq   %9,%%r8\n"
                              "movq   %10,%%r10\n"
-                             "syscall\n"
+                             "SYSCALLDB\n"
 
                              /* if (%rax != 0)
                               *   return;
@@ -1487,7 +1489,7 @@ struct kernel_stat {
                               */
                              "movq   %%rax,%%rdi\n"
                              "movq   %3,%%rax\n"
-                             "syscall\n"
+                             "SYSCALLDB\n"
 
                              /* Return to parent.
                               */
@@ -1517,7 +1519,7 @@ struct kernel_stat {
       __asm__ __volatile__("call   2f\n"
                          "0:.align 16\n"
                          "1:movq   %1,%%rax\n"
-                           "syscall\n"
+                           "SYSCALLDB\n"
                          "2:popq   %0\n"
                            "addq   $(1b-0b),%0\n"
                            : "=a" (res)
